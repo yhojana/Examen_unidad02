@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
@@ -14,10 +15,17 @@ import pe.edu.upeu.examen02.modelo.ResultadoTO;
 import pe.edu.upeu.examen02.util.MsgBox;
 import pe.edu.upeu.examen02.util.UtilsX;
 
-
-
 public class Vista extends javax.swing.JFrame {
-     private JLabel [][] casillas;
+    private int cantMovidas;
+    private boolean end;
+    private boolean draw;
+    private JLabel[][] casillas;
+    private String[][] tablero;
+     private JLabel cuadroj1;
+    private JLabel cuadroj2;
+    
+
+   
     
     ResultadoDaoI rDao;
     static ResultadoTO uTO = new ResultadoTO();
@@ -26,43 +34,47 @@ public class Vista extends javax.swing.JFrame {
     TableRowSorter<TableModel> trsfiltro;
     BufferedImage image;
     UtilsX obj = new UtilsX();
-   
-   
-   
-    String turno="X";//inicia la primera partida con X
-    String siguientejuego="O";// La segunda ronda inicia con O
-    boolean estado= true;//si es true se puede seguir jugando, si es false se termino la partida
-    JLabel lbs []=new JLabel [9];
-    int ganadas [][]={//combinaciones para ganar
-        {1,2,3},
-        {4,5,6},//horizontales
-        {7,8,9},
-        
-        {1,4,7},
-        {2,5,8},//verticales
-        {3,6,9},
-        
-        {1,5,9},
-        {3,5,7},//diagonales
-         
+    
+    String turno = "X";//inicia la primera partida con X
+    String siguientejuego = "O";// La segunda ronda inicia con O
+    boolean estado = true;//si es true se puede seguir jugando, si es false se termino la partida
+    JLabel lbs[] = new JLabel[9];
+    int ganadas[][] = {//combinaciones para ganar
+        {1, 2, 3},
+        {4, 5, 6},//horizontales
+        {7, 8, 9},
+        {1, 4, 7},
+        {2, 5, 8},//verticales
+        {3, 6, 9},
+        {1, 5, 9},
+        {3, 5, 7},//diagonales
     };
-
+    
     public Vista() {
         initComponents();
+        btnIniciar.setEnabled(false);
         this.setLocationRelativeTo(null);
-        lbs [0]= jLabel1;
-        lbs [1]= jLabel2;
-        lbs [2]= jLabel3;
-        lbs [3]= jLabel4;
-        lbs [4]= jLabel5;
-        lbs [5]= jLabel6;
-        lbs [6]= jLabel7;
-        lbs [7]= jLabel8;
-        lbs [8]= jLabel9;
+        lbs[0] = jLabel1;
+        lbs[1] = jLabel2;
+        lbs[2] = jLabel3;
+        lbs[3] = jLabel4;
+        lbs[4] = jLabel5;
+        lbs[5] = jLabel6;
+        lbs[6] = jLabel7;
+        lbs[7] = jLabel8;
+        lbs[8] = jLabel9;
         ListarResultado();
+        
     }
     
-
+    public void habilitarBoton() {
+        if (!txtJugador1.getText().isEmpty() && !txtJugador2.getText().isEmpty()) {
+            btnIniciar.setEnabled(true);
+            
+        } else {
+            btnIniciar.setEnabled(false);
+        }
+    }
     
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -419,10 +431,21 @@ public class Vista extends javax.swing.JFrame {
                 txtJugador1ActionPerformed(evt);
             }
         });
+        txtJugador1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                txtJugador1KeyReleased(evt);
+            }
+        });
 
         jLabel14.setText("NOMBRE JUGADOR 1:");
 
         jLabel15.setText("NOMBRE JUGADOR 2:");
+
+        txtJugador2.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                txtJugador2KeyReleased(evt);
+            }
+        });
 
         btnAnular.setBackground(new java.awt.Color(204, 204, 204));
         btnAnular.setText("ANULAR");
@@ -497,15 +520,15 @@ public class Vista extends javax.swing.JFrame {
             lbs[i].setText("");
             lbs[i].setBackground(Color.pink);
         }
-        turno=siguientejuego;
-        if(siguientejuego.equals("O")){
-            siguientejuego="X";
-        }else {
-            siguientejuego="O";
+        turno = siguientejuego;
+        if (siguientejuego.equals("O")) {
+            siguientejuego = "X";
+        } else {
+            siguientejuego = "O";
         }
-
-        lbturno.setText("Turno de "+ turno);
-        estado=true;
+        
+        lbturno.setText("Turno de " + turno);
+        estado = true;
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jLabel9MousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel9MousePressed
@@ -545,7 +568,7 @@ public class Vista extends javax.swing.JFrame {
     }//GEN-LAST:event_jLabel1MousePressed
 
     private void btnIniciarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnIniciarActionPerformed
-
+        
         uTO.setNombrePartida("Partida ");
         uTO.setNombreJugador1(txtJugador1.getText());
         uTO.setNombreJugador2(txtJugador2.getText());
@@ -557,27 +580,38 @@ public class Vista extends javax.swing.JFrame {
         
         int dx = rDao.create(uTO);
         uTO.setIdResultado(dx);
-        ListarResultado();       
+        ListarResultado();        
     }//GEN-LAST:event_btnIniciarActionPerformed
 
     private void btnAnularActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAnularActionPerformed
-
+ turno = "X";
+        end = false;
+        draw = false;
+        cantMovidas = 0;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+          
+                casillas[i][j].setText("");
+            }     
+        }
+        
+        JOptionPane.showMessageDialog(null, "Partida anulada");
     }//GEN-LAST:event_btnAnularActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-       for (int i = 0; i < lbs.length; i++) {//Al apretar el boton se reinicia el tablero y comienza la otra partida
-         lbs[i].setText("");
-         lbs[i].setBackground(Color.gray);
-         }
-        turno=siguientejuego;
-        if(siguientejuego.equals("O")){
-        siguientejuego="X";
-        }else {
-         siguientejuego="O";
+        for (int i = 0; i < lbs.length; i++) {//Al apretar el boton se reinicia el tablero y comienza la otra partida
+            lbs[i].setText("");
+            lbs[i].setBackground(Color.gray);
+        }
+        turno = siguientejuego;
+        if (siguientejuego.equals("O")) {
+            siguientejuego = "X";
+        } else {
+            siguientejuego = "O";
         }
         
-       lbturno.setText("Turno de "+ turno);
-       estado=true; 
+        lbturno.setText("Turno de " + turno);
+        estado = true;        
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
@@ -588,66 +622,73 @@ public class Vista extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_txtJugador1ActionPerformed
 
-    public void apretar(int espacio){
-        if (lbs[espacio-1].getText().equals("")&& estado){
-        lbs[espacio-1].setText(turno);
-        cambiarturno();
-        comprobarganador();
-        }  
-    }
-    public void cambiarturno(){
-    if (turno.equals("X")){
-    turno="O"; 
-     }else{
-    turno="X";
-     }
-    lbturno.setText("Turno de " + turno);
-    }
+    private void txtJugador1KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtJugador1KeyReleased
+        habilitarBoton();
+    }//GEN-LAST:event_txtJugador1KeyReleased
+
+    private void txtJugador2KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtJugador2KeyReleased
+       habilitarBoton();
+    }//GEN-LAST:event_txtJugador2KeyReleased
     
-    public void comprobarganador (){
-     for (int i = 0; i < ganadas.length; i++) {
-       if(lbs[ganadas[i][0]-1].getText().equals("X")&&
-                 lbs[ganadas[i][1]-1].getText().equals("X")&&
-                   lbs[ganadas[i][2]-1].getText().equals("X")
-                    ){
-          lbs[ganadas[i][0]-1].setBackground(Color.LIGHT_GRAY);
-          lbs[ganadas[i][1]-1].setBackground(Color.LIGHT_GRAY);
-          lbs[ganadas[i][2]-1].setBackground(Color.LIGHT_GRAY);           
-          victoriasJ1.setText(Integer.toString(Integer.parseInt(victoriasJ1.getText())+1));//toma el string de la casilla, lo parsea a entero, le suma 1 y se lo setea nuevamente como string
-         uTO.setGanador(uTO.getNombreJugador1());
+    public void apretar(int espacio) {
+        if (lbs[espacio - 1].getText().equals("") && estado) {
+            lbs[espacio - 1].setText(turno);
+            cambiarturno();
+            comprobarganador();
+        }        
+    }
+
+    public void cambiarturno() {
+        if (turno.equals("X")) {
+            turno = "O";            
+        } else {
+            turno = "X";
+        }
+        lbturno.setText("Turno de " + turno);
+    }
+
+    public void comprobarganador() {
+        for (int i = 0; i < ganadas.length; i++) {
+            if (lbs[ganadas[i][0] - 1].getText().equals("X")
+                    && lbs[ganadas[i][1] - 1].getText().equals("X")
+                    && lbs[ganadas[i][2] - 1].getText().equals("X")) {
+                lbs[ganadas[i][0] - 1].setBackground(Color.LIGHT_GRAY);
+                lbs[ganadas[i][1] - 1].setBackground(Color.LIGHT_GRAY);
+                lbs[ganadas[i][2] - 1].setBackground(Color.LIGHT_GRAY);                
+                victoriasJ1.setText(Integer.toString(Integer.parseInt(victoriasJ1.getText()) + 1));//toma el string de la casilla, lo parsea a entero, le suma 1 y se lo setea nuevamente como string
+                uTO.setGanador(uTO.getNombreJugador1());
                 uTO.setPunto(1);
                 uTO.setEstado("Finalizado");
                 ResultadoDaoI rDao = new ResultadoDAO();
                 rDao.update(uTO);
                 ListarResultado();
-           lbturno.setText("Gano el jugador X");
-          estado=false;           
-    
+                lbturno.setText("Gano el jugador X");
+                estado = false;                
+                
             }
-       if(lbs[ganadas[i][0]-1].getText().equals("O")&&
-               lbs[ganadas[i][1]-1].getText().equals("O")&&
-               lbs[ganadas[i][2]-1].getText().equals("O")
-                    ){
-          lbs[ganadas[i][0]-1].setBackground(Color.LIGHT_GRAY);
-          lbs[ganadas[i][1]-1].setBackground(Color.LIGHT_GRAY);
-          lbs[ganadas[i][2]-1].setBackground(Color.LIGHT_GRAY);         
-          victoriasJ2.setText(Integer.toString(Integer.parseInt(victoriasJ2.getText())+1));
-          uTO.setGanador(uTO.getNombreJugador2());
+            if (lbs[ganadas[i][0] - 1].getText().equals("O")
+                    && lbs[ganadas[i][1] - 1].getText().equals("O")
+                    && lbs[ganadas[i][2] - 1].getText().equals("O")) {
+                lbs[ganadas[i][0] - 1].setBackground(Color.LIGHT_GRAY);
+                lbs[ganadas[i][1] - 1].setBackground(Color.LIGHT_GRAY);
+                lbs[ganadas[i][2] - 1].setBackground(Color.LIGHT_GRAY);                
+                victoriasJ2.setText(Integer.toString(Integer.parseInt(victoriasJ2.getText()) + 1));
+                uTO.setGanador(uTO.getNombreJugador2());
                 uTO.setPunto(1);
                 uTO.setEstado("Finalizado");
                 ResultadoDaoI rDao = new ResultadoDAO();
                 rDao.update(uTO);
                 ListarResultado();
-          lbturno.setText("Gano el jugador O");
-          estado=false;     
+                lbturno.setText("Gano el jugador O");
+                estado = false; 
+                
             }
         }
     }
-      
- 
+    
+    
     public static void main(String args[]) {
-       
-       
+        
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -666,8 +707,9 @@ public class Vista extends javax.swing.JFrame {
         }
         //</editor-fold>
         //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
 
-     
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new Vista().setVisible(true);
@@ -712,20 +754,25 @@ public class Vista extends javax.swing.JFrame {
     private void paintForm() {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
-    public JLabel[][] getCasillas(){
+
+    public JLabel[][] getCasillas() {
         return casillas;
     }
-
-    public JButton getBotonReset(){
+    
+    public JButton getBotonReset() {
         return btnIniciar;
     }
     
-     public JButton getBotonAnular(){
-        return btnAnular;
+    public JButton getBotonAnular() {
+       return btnAnular;
+        
     }
 
+    
+    
+    
     private void ListarResultado() {
-      rDao = new ResultadoDAO();
+        rDao = new ResultadoDAO();
         List<ResultadoTO> listarResultado = rDao.listarResultado();
         jTable1.setAutoCreateRowSorter(true);
         modelo = (DefaultTableModel) jTable1.getModel();
@@ -741,6 +788,6 @@ public class Vista extends javax.swing.JFrame {
             ob[6] = listarResultado.get(i).getEstado();
             modelo.addRow(ob);
         }
-        jTable1.setModel(modelo); 
+        jTable1.setModel(modelo);        
     }
 }
